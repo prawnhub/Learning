@@ -1,104 +1,48 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+import pandas as pd
+import sqlite3
 
-# C extensions
-*.so
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+class Storage(object):
+    def __init__(self, db_path):
+        self.db_path = db_path
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+    def create_tables(self):   # Init data table
+        self.cursor.execute("CREATE TABLE `deaths_total` ("
+                            "`Country` VARCHAR NOT NULL,"
+                            "`Date` DATE NOT NULL,"
+                            "`Death` INTEGER NOT NULL;")
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+        self.cursor.execute("CREATE TABLE `deaths_change_python` ("
+                            "`Country` VARCHAR NOT NULL,"
+                            "`Death_change` INTEGER NOT NULL;")
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-.pytest_cache/
+    def __enter__(self):
+        self.connection = sqlite3.connect(self.db_path)
+        self.cursor = self.connection.cursor()
 
-# Translations
-*.mo
-*.pot
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.connection.commit()
+        self.cursor.close()
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
 
-# Flask stuff:
-instance/
-.webassets-cache
 
-# Scrapy stuff:
-.scrapy
+    def to_sql(df):
+        df.to_sql('deaths_total', self.connection, if_exists='replace', index=False )
 
-# Sphinx documentation
-docs/_build/
 
-# PyBuilder
-target/
+def death_total_df(url):
+    df = pd.read_csv(url).drop(['Province/State', 'Lat', 'Long'], axis=1)
+    df = df.melt(id_vars=['Country/Region'], var_name='Date', value_name='Death')
+    df['Date'] = pd.to_datetime(df['Date'], format='%m/%d/%y')
 
-# Jupyter Notebook
-.ipynb_checkpoints
 
-# pyenv
-.python-version
+def main():
+    url = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv'
 
-# celery beat schedule file
-celerybeat-schedule
 
-# SageMath parsed files
-*.sage.py
+    print(df.head())
+    print(df.info())
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+if __name__ == '__main__':
+    main()
 
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
