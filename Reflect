@@ -1,0 +1,33 @@
+import pandas as pd
+import sqlite3
+
+
+def to_sql(path, df, table_name):
+    connection = sqlite3.connect(path)
+    df.to_sql(table_name, connection, if_exists='replace', index=False)
+
+
+def grouped_df(url):
+    df = pd.read_csv(url).drop(['Province/State', 'Lat', 'Long'], axis=1)
+    df = df.melt(id_vars=['Country/Region'], var_name='Date', value_name='Death')
+    df['Date'] = pd.to_datetime(df['Date'], format='%m/%d/%y')
+    return df.groupby(['Country/Region', 'Date'])['Death'].sum().reset_index()
+
+
+def main():
+    url = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv'
+    path = r'G:\test1\test.db'
+
+    #Insert into Deaths Total table
+    df = grouped_df(url)
+    to_sql(path, df, 'deaths_total')
+
+    #Insert into Deaths change python table
+    df = df[df['Death'] != 0]
+    df['pct_change'] = df.sort_values('Date').groupby(['Country/Region'])['Death'].pct_change()
+    to_sql(path, df, 'deaths_change_python')
+
+
+if __name__ == '__main__':
+    main()
+
