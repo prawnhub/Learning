@@ -1,5 +1,6 @@
 import pandas as pd
 import sqlite3
+import numpy as np
 
 
 def to_sql(path, df, table_name):
@@ -23,8 +24,8 @@ def main():
     to_sql(path, df, 'deaths_total')
 
     #Insert into Deaths change python table
-    df = df[df['Death'] != 0]
-    df['pct_change'] = df.sort_values('Date').groupby(['Country/Region'])['Death'].pct_change()
+    df['pct_change'] = df.sort_values('Date').groupby(['Country/Region'])['Death'].pct_change().round(3)
+    df = df.replace([np.inf, -np.inf], np.nan)
     to_sql(path, df, 'deaths_change_python')
 
 
